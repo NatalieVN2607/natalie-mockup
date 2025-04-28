@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Natalie's Packaging Mockups</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #preview-container { background: #f8fafc; }
+        .watermark {
+            position: absolute;
+            opacity: 0.4;
+            pointer-events: none;
+            font-size: 4rem;
+            transform: rotate(-30deg);
+            color: #334155;
+        }
+    </style>
+</head>
+<body class="bg-slate-50">
+    <div class="container mx-auto px-4 py-8">
+        <h1 class="text-3xl font-bold text-slate-800 mb-8">Natalie's Packaging Studio</h1>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <!-- Controls -->
+            <div class="space-y-6">
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-lg font-semibold mb-4">1. Upload Assets</h2>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Product Photo</label>
+                            <input type="file" id="productUpload" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-2">Label Design</label>
+                            <input type="file" id="labelUpload" accept="image/*" class="block w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-slate-50 file:text-slate-700 hover:file:bg-slate-100">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <h2 class="text-lg font-semibold mb-4">2. Choose Template</h2>
+                    <div class="grid grid-cols-3 gap-3">
+                        <button data-shape="cylinder" class="template-btn p-2 border rounded-md hover:bg-slate-50 active:bg-slate-100">
+                            <img src="https://via.placeholder.com/100x100/dbeafe/1e3a8a?text=Cylinder" class="rounded">
+                        </button>
+                        <button data-shape="box" class="template-btn p-2 border rounded-md hover:bg-slate-50 active:bg-slate-100">
+                            <img src="https://via.placeholder.com/100x100/dbeafe/1e3a8a?text=Box" class="rounded">
+                        </button>
+                        <button data-shape="pouch" class="template-btn p-2 border rounded-md hover:bg-slate-50 active:bg-slate-100">
+                            <img src="https://via.placeholder.com/100x100/dbeafe/1e3a8a?text=Pouch" class="rounded">
+                        </button>
+                    </div>
+                </div>
+
+                <div class="bg-white p-6 rounded-lg shadow-sm">
+                    <button id="downloadBtn" class="w-full bg-emerald-600 text-white py-2 px-4 rounded-md hover:bg-emerald-700 transition-colors">
+                        Remove Watermark & Download
+                    </button>
+                </div>
+            </div>
+
+            <!-- Preview -->
+            <div class="lg:col-span-2 relative h-[600px] bg-white rounded-lg shadow-sm" id="preview-container">
+                <div class="watermark absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">NATALIE</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div id="passwordModal" class="fixed inset-0 bg-black/50 hidden items-center justify-center">
+        <div class="bg-white p-8 rounded-lg max-w-sm w-full">
+            <h3 class="text-lg font-semibold mb-4">Enter Password</h3>
+            <input type="password" id="passwordInput" class="w-full border rounded-md px-3 py-2 mb-4">
+            <button id="submitPassword" class="w-full bg-slate-800 text-white py-2 px-4 rounded-md hover:bg-slate-900">
+                Unlock Download
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let scene, camera, renderer, controls, currentMesh;
+        const watermark = document.querySelector('.watermark');
+
+        // Initialize Three.js scene
+        function initScene() {
+            scene = new THREE.Scene();
+            camera = new THREE.PerspectiveCamera(75, 
+                window.innerWidth / window.innerHeight, 0.1, 1000);
+            
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(
+                document.getElementById('preview-container').clientWidth,
+                document.getElementById('preview-container').clientHeight
+            );
+            document.getElementById('preview-container').appendChild(renderer.domElement);
+            
+            camera.position.z = 5;
+            controls = new THREE.OrbitControls(camera, renderer.domElement);
+            
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 5, 5);
+            scene.add(directionalLight);
+        }
+
+        // Create 3D object based on shape
+        function createShape(shapeType) {
+            if (currentMesh) scene.remove(currentMesh);
+
+            let geometry;
+            switch(shapeType) {
+                case 'cylinder':
+                    geometry = new THREE.CylinderGeometry(1, 1, 2, 32);
+                    break;
+                case 'box':
+                    geometry = new THREE.BoxGeometry(2, 2, 2);
+                    break;
+                case 'pouch':
+                    geometry = new THREE.SphereGeometry(1, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2);
+                    break;
+            }
+
+            const material = new THREE.MeshPhongMaterial({ color: 0xffffff });
+            currentMesh = new THREE.Mesh(geometry, material);
+            scene.add(currentMesh);
+        }
+
+        // Handle image uploads
+        function handleImageUpload(file, textureType) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const texture = new THREE.TextureLoader().load(e.target.result, () => {
+                    if (currentMesh) {
+                        currentMesh.material.map = texture;
+                        currentMesh.material.needsUpdate = true;
+                    }
+                });
+            };
+            reader.readAsDataURL(file);
+        }
+
+        // Event Listeners
+        document.querySelectorAll('.template-btn').forEach(btn => {
+            btn.addEventListener('click', () => createShape(btn.dataset.shape));
+        });
+
+        document.getElementById('productUpload').addEventListener('change', (e) => {
+            handleImageUpload(e.target.files[0], 'product');
+        });
+
+        document.getElementById('labelUpload').addEventListener('change', (e) => {
+            handleImageUpload(e.target.files[0], 'label');
+        });
+
+        // Download handling
+        document.getElementById('downloadBtn').addEventListener('click', () => {
+            document.getElementById('passwordModal').classList.remove('hidden');
+        });
+
+        document.getElementById('submitPassword').addEventListener('click', () => {
+            if (document.getElementById('passwordInput').value === '@hieplon') {
+                watermark.style.display = 'none';
+                const link = document.createElement('a');
+                link.download = `natalie-mockup-${Date.now()}.png`;
+                link.href = renderer.domElement.toDataURL();
+                link.click();
+                watermark.style.display = 'block';
+                document.getElementById('passwordModal').classList.add('hidden');
+            }
+        });
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+            controls.update();
+            renderer.render(scene, camera);
+        }
+
+        // Initialize
+        initScene();
+        createShape('cylinder');
+        animate();
+
+        // Responsive handling
+        window.addEventListener('resize', () => {
+            camera.aspect = 
+                document.getElementById('preview-container').clientWidth /
+                document.getElementById('preview-container').clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(
+                document.getElementById('preview-container').clientWidth,
+                document.getElementById('preview-container').clientHeight
+            );
+        });
+    </script>
+</body>
+</html>
